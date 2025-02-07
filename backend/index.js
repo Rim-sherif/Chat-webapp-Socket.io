@@ -1,5 +1,7 @@
-import express from'express'
+import express from 'express'
 import { Server } from 'socket.io'
+import http from 'http'
+
 const app = express()
 const port = 3000
 
@@ -12,30 +14,33 @@ app.post('/', (req, res) => {
     res.json({ success: true })
 })
 
-const server = app.listen(port, () => console.log(`Example app listening at http://localhost:3000`))
+const server = http.createServer(app)
 
-const io = new Server(server,{
-    cors:"*"
+const io = new Server(server, {
+    cors: { origin: '*' }
 })
 
-io.on("connection",(socket)=>{
-    console.log("socket connect",socket.id)
-    socket.on("disconnect",()=>{
-        console.log("socket disconnect",socket.id)
+io.on("connection", (socket) => {
+    console.log("Socket connected:", socket.id)
 
+    socket.on("disconnect", () => {
+        console.log("Socket disconnected:", socket.id)
     })
 
-    socket.on("sendData",(data)=>{
+    socket.on("sendData", (data) => {
         console.log(data)
-        io.emit("message",data)
+        io.emit("message", data)
     })
 
-    socket.on("showTyping",(data)=>{
-    socket.broadcast.emit("typing",data)
+    socket.on("showTyping", (data) => {
+        socket.broadcast.emit("typing", data)
     })
 
-    socket.on("removeTyping",(data)=>{
-        io.emit("",data)
-        })
+    socket.on("removeTyping", () => {
+        io.emit("stopTyping")
+    })
 })
+
+server.listen(port, () => console.log(`Server running at http://localhost:${port}`))
+
 
